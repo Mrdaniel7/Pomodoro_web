@@ -1,0 +1,1865 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contador de Personas Avanzado</title>
+    <!-- 
+    Aplicación desarrollada por Daniel Terroba Alcala.
+    GUÍA RÁPIDA DE USO:
+    - Cambiar modo (Libre / Con límite): Usa el menú de opciones (icono de engranaje) y selecciona "Cambiar Modo".
+    - Guardar un instante: Pulsa el botón "Guardar instante" para registrar la cuenta actual con la hora y una nota opcional.
+    - Ver histórico: Usa los botones "Gráfica"/"Calendario" para cambiar de vista. Filtra por "Semana/Mes/Año". La gráfica inferior muestra la actividad de las últimas 24h.
+    - Cambiar tema y modo oscuro: En el menú de opciones, puedes activar el modo oscuro/claro y elegir entre 8 temas de color.
+    - Borrar datos: "Reset" reinicia solo el contador actual. "Borrar Base de Datos" en los ajustes elimina todo el historial de forma permanente.
+    -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* --- VARIABLES DE TEMA Y ESTILOS GLOBALES --- */
+        :root {
+            /* Paleta y Estilos Base (light-default) */
+            --bg-color: #f4f7fc;
+            --surface-color: #ffffff;
+            --text-color: #1a202c;
+            --text-muted-color: #718096;
+            --primary-color: #3498db;
+            --primary-color-light: #a9d6f5;
+            --accent-color: #2ecc71;
+            --danger-color: #e74c3c;
+            --warning-color: #f1c40f;
+            --border-color: #e2e8f0;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            
+            --bg-image: none;
+            --button-border-radius: 12px;
+            --container-border-radius: 16px;
+
+            --font-size-base: 16px;
+            --font-size-large: 18px;
+            --spacing-unit: 8px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            color-scheme: light;
+        }
+
+        /* --- TEMAS CLAROS --- */
+        [data-theme="light-forest"] {
+            --bg-color: #f0fdf4;
+            --surface-color: #ffffff;
+            --text-color: #14532d;
+            --primary-color: #22c55e;
+            --primary-color-light: #dcfce7;
+            --accent-color: #f97316;
+            --border-color: #d1fae5;
+            --button-border-radius: 999px; /* Botones redondos */
+            --bg-image: linear-gradient(to top, #e0f2f1, #f1f8e9);
+        }
+        [data-theme="light-sunset"] {
+            --bg-color: #fff7ed;
+            --surface-color: #ffffff;
+            --text-color: #431407;
+            --primary-color: #f97316;
+            --primary-color-light: #ffedd5;
+            --accent-color: #7c3aed;
+            --border-color: #fed7aa;
+            --button-border-radius: 8px; /* Botones con esquinas suaves */
+            --bg-image: linear-gradient(to bottom right, #ffedd5, #fbcfe8);
+        }
+        [data-theme="light-minimal"] {
+            --bg-color: #f8fafc;
+            --surface-color: #ffffff;
+            --text-color: #0f172a;
+            --primary-color: #475569;
+            --primary-color-light: #e2e8f0;
+            --accent-color: #0ea5e9;
+            --border-color: #e2e8f0;
+            --button-border-radius: 4px; /* Botones casi cuadrados */
+            --bg-image: none;
+        }
+
+
+        /* --- TEMAS OSCUROS --- */
+        [data-theme-mode="dark"] {
+            /* Paleta y Estilos Base (dark-default) */
+            --bg-color: #1a202c;
+            --surface-color: #2d3748;
+            --text-color: #f7fafc;
+            --text-muted-color: #a0aec0;
+            --primary-color: #4299e1;
+            --primary-color-light: #2c5282;
+            --accent-color: #48bb78;
+            --danger-color: #f56565;
+            --warning-color: #ecc94b;
+            --border-color: #4a5568;
+            --shadow-color: rgba(0, 0, 0, 0.4);
+            --bg-image: none;
+            --button-border-radius: 12px;
+            --container-border-radius: 16px;
+            color-scheme: dark;
+        }
+        [data-theme="dark-neon"] {
+            --bg-color: #0d1117;
+            --surface-color: #161b22;
+            --text-color: #c9d1d9;
+            --primary-color: #f72585;
+            --primary-color-light: #49172c;
+            --accent-color: #4cc9f0;
+            --border-color: #30363d;
+            --button-border-radius: 4px; /* Botones cuadrados */
+            --bg-image: radial-gradient(circle at top right, rgba(247, 37, 133, 0.1), transparent 40%), radial-gradient(circle at bottom left, rgba(76, 201, 240, 0.1), transparent 40%);
+        }
+        [data-theme="dark-ocean"] {
+            --bg-color: #020617;
+            --surface-color: #0f172a;
+            --text-color: #e2e8f0;
+            --primary-color: #0ea5e9;
+            --primary-color-light: #0c4a6e;
+            --accent-color: #a3e635;
+            --border-color: #1e293b;
+            --button-border-radius: 999px; /* Botones redondos */
+            --bg-image: linear-gradient(180deg, #020617 0%, #1e293b 100%);
+        }
+        [data-theme="dark-space"] {
+            --bg-color: #1e1b4b;
+            --surface-color: #312e81;
+            --text-color: #e0e7ff;
+            --primary-color: #a78bfa;
+            --primary-color-light: #4338ca;
+            --accent-color: #fde047;
+            --border-color: #4338ca;
+            --button-border-radius: 8px;
+            --bg-image: radial-gradient(ellipse at bottom, #1e1b4b 0%, #000000 100%);
+        }
+        
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            height: 100%;
+            overflow-x: hidden;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: var(--bg-image);
+            color: var(--text-color);
+            font-size: var(--font-size-base);
+            transition: background-color 0.5s ease, color 0.5s ease;
+        }
+
+        body.accessible {
+            --font-size-base: 18px;
+            --font-size-large: 22px;
+            --spacing-unit: 10px;
+        }
+        
+        body.widget-mode {
+            background-color: transparent;
+            background-image: none;
+        }
+
+        .main-container {
+            display: grid;
+            grid-template-columns: 450px 1fr;
+            gap: calc(var(--spacing-unit) * 3);
+            padding: calc(var(--spacing-unit) * 3);
+            height: 100vh;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: calc(var(--spacing-unit) * 3);
+        }
+
+        .main-content, .gauge-container, .modal-content, .options-dropdown {
+            border-radius: var(--container-border-radius);
+        }
+
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: calc(var(--spacing-unit) * 2);
+            overflow-y: auto;
+            background-color: var(--surface-color);
+            padding: calc(var(--spacing-unit) * 3);
+            box-shadow: 0 4px 12px var(--shadow-color);
+            transition: background-color 0.5s, border-radius 0.5s;
+        }
+        
+        .widget-view {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        /* --- MENÚ DE OPCIONES --- */
+        .options-menu {
+            position: relative;
+        }
+        .options-button {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 2px 4px var(--shadow-color);
+            transition: all 0.2s ease;
+        }
+        .options-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px var(--shadow-color);
+        }
+        .options-button svg {
+            width: 24px;
+            height: 24px;
+            fill: var(--text-color);
+        }
+        .options-dropdown {
+            position: absolute;
+            top: 55px;
+            left: 0;
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 12px var(--shadow-color);
+            z-index: 100;
+            width: 300px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s, background-color 0.5s, border-radius 0.5s;
+        }
+        .options-dropdown.open {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        .options-dropdown ul {
+            list-style: none;
+        }
+        .options-dropdown ul li {
+            padding: var(--spacing-unit) calc(var(--spacing-unit) * 2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            font-size: var(--font-size-base);
+        }
+        .options-dropdown ul li:not(:last-child) {
+            border-bottom: 1px solid var(--border-color);
+        }
+        .options-dropdown ul li:hover {
+            background-color: var(--bg-color);
+        }
+        .options-dropdown .danger-text {
+            color: var(--danger-color);
+            font-weight: bold;
+        }
+
+        /* --- SWITCHES --- */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 28px;
+        }
+        .switch input { 
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 28px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: var(--primary-color);
+        }
+        input:checked + .slider:before {
+            transform: translateX(22px);
+        }
+
+        /* --- SELECTOR DE TEMAS --- */
+        .theme-options {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: var(--spacing-unit);
+            padding: var(--spacing-unit) calc(var(--spacing-unit) * 2);
+        }
+        #theme-selector-panel h4 {
+            grid-column: 1 / -1;
+            text-align: center;
+            margin-top: var(--spacing-unit);
+            color: var(--text-muted-color);
+            font-weight: 600;
+        }
+        #theme-selector-panel .theme-options:first-of-type {
+            padding-top: calc(var(--spacing-unit) * 2);
+        }
+        #theme-selector-panel .theme-options:last-of-type {
+            padding-bottom: calc(var(--spacing-unit) * 2);
+        }
+        .theme-option {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid var(--border-color);
+            transition: transform 0.2s;
+            justify-self: center;
+        }
+        .theme-option.selected {
+            border-color: var(--primary-color);
+            transform: scale(1.1);
+        }
+        .theme-option:hover { transform: scale(1.1); }
+        .theme-option[data-theme="light-default"] { background-color: #3498db; }
+        .theme-option[data-theme="light-forest"] { background-color: #22c55e; }
+        .theme-option[data-theme="light-sunset"] { background-color: #f97316; }
+        .theme-option[data-theme="light-minimal"] { background-color: #475569; }
+        .theme-option[data-theme="dark-default"] { background-color: #4299e1; }
+        .theme-option[data-theme="dark-neon"] { background-color: #f72585; }
+        .theme-option[data-theme="dark-ocean"] { background-color: #0ea5e9; }
+        .theme-option[data-theme="dark-space"] { background-color: #a78bfa; }
+
+
+        /* --- SEMICÍRCULO (GAUGE) --- */
+        .gauge-container {
+            position: relative;
+            width: 100%;
+            padding-top: 50%;
+            background-color: var(--surface-color);
+            box-shadow: 0 4px 12px var(--shadow-color);
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            overflow: hidden;
+            transition: background-color 0.5s, border-radius 0.5s;
+        }
+        #gauge-canvas, #widget-gauge-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        .gauge-text {
+            position: absolute;
+            bottom: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            color: var(--text-color);
+            z-index: 1;
+        }
+        .gauge-count {
+            font-size: 3.5rem;
+            font-weight: 700;
+        }
+        .gauge-capacity {
+            font-size: 1rem;
+            color: var(--text-muted-color);
+        }
+        
+        .tts-button {
+            position: absolute;
+            top: var(--spacing-unit);
+            right: var(--spacing-unit);
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: var(--spacing-unit);
+        }
+        .tts-button svg {
+             width: 24px;
+             height: 24px;
+             fill: var(--text-muted-color);
+        }
+
+
+        /* --- CONTROLES --- */
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--spacing-unit);
+        }
+        .control-button {
+            padding: calc(var(--spacing-unit) * 2);
+            font-size: var(--font-size-large);
+            font-weight: 600;
+            border-radius: var(--button-border-radius);
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background-color: var(--surface-color);
+            color: var(--primary-color);
+            border: 2px solid var(--primary-color);
+            text-align: center;
+        }
+        .control-button:hover {
+            background-color: var(--primary-color);
+            color: var(--surface-color);
+            transform: translateY(-2px);
+        }
+        .control-button.primary {
+            background-color: var(--primary-color);
+            color: var(--surface-color);
+        }
+        .control-button.danger {
+            color: var(--danger-color);
+            border-color: var(--danger-color);
+        }
+        .control-button.danger:hover {
+            background-color: var(--danger-color);
+            color: var(--surface-color);
+        }
+        .accessible .control-button {
+            padding: calc(var(--spacing-unit) * 3);
+            font-size: calc(var(--font-size-large) * 1.2);
+        }
+
+        /* --- INDICADOR SEMÁFORO --- */
+        .traffic-light-container {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-unit);
+            margin-bottom: var(--spacing-unit);
+        }
+        .traffic-light {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background-color: var(--border-color);
+            border: 2px solid var(--text-muted-color);
+            transition: background-color 0.3s ease;
+        }
+        .traffic-light.green { background-color: var(--accent-color); }
+        .traffic-light.yellow { background-color: var(--warning-color); }
+        .traffic-light.red { background-color: var(--danger-color); }
+
+        /* --- LISTA DE INSTANTES (SNAPSHOTS) --- */
+        .snapshots-container h3, .history-container h3 {
+            margin-bottom: var(--spacing-unit);
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: var(--spacing-unit);
+        }
+        .snapshot-list {
+            list-style: none;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .snapshot-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--spacing-unit);
+            border-bottom: 1px solid var(--border-color);
+            gap: 12px;
+        }
+        .snapshot-item:hover {
+            background-color: var(--bg-color);
+        }
+        .snapshot-info {
+            flex-grow: 1;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+        .snapshot-details {
+            font-size: 0.9em;
+            color: var(--text-muted-color);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .snapshot-title {
+            color: var(--text-color);
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        .snapshot-time {
+            flex-shrink: 0;
+            color: var(--text-muted-color);
+        }
+        .delete-snapshot {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--danger-color);
+            flex-shrink: 0;
+        }
+        #day-notes-list {
+            list-style: none;
+            max-height: 40vh;
+            overflow-y: auto;
+        }
+        #day-notes-list li {
+            padding: var(--spacing-unit);
+            border-bottom: 1px solid var(--border-color);
+        }
+        #day-notes-list li:last-child {
+            border-bottom: none;
+        }
+        #day-notes-list small {
+            color: var(--text-muted-color);
+            font-size: 0.9em;
+        }
+
+
+        /* --- HISTÓRICO Y GRÁFICAS --- */
+        .history-container .chart-controls {
+            display: flex;
+            gap: var(--spacing-unit);
+            align-items: center;
+            margin-bottom: var(--spacing-unit);
+            flex-wrap: wrap;
+        }
+        .history-container .chart-view-btn {
+            padding: calc(var(--spacing-unit)*0.5) var(--spacing-unit);
+            border: 1px solid var(--border-color);
+            background-color: transparent;
+            color: var(--text-muted-color);
+            border-radius: var(--button-border-radius);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .history-container .chart-view-btn:hover {
+            background-color: var(--primary-color-light);
+            color: var(--primary-color);
+        }
+        .history-container .chart-view-btn.active {
+            background-color: var(--primary-color);
+            color: var(--surface-color);
+            border-color: var(--primary-color);
+        }
+        
+        .chart-wrapper {
+            position: relative;
+            height: 300px;
+            width: 100%;
+            background-color: var(--bg-color);
+            border-radius: var(--container-border-radius);
+            margin-top: var(--spacing-unit);
+        }
+
+        #history-bar-chart-container, #calendar-container {
+            margin-top: var(--spacing-unit);
+        }
+
+        #calendar-container {
+            background-color: var(--bg-color);
+            border-radius: var(--container-border-radius);
+            padding: var(--spacing-unit);
+        }
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--spacing-unit);
+            font-weight: bold;
+            position: relative;
+        }
+        .calendar-title-container {
+            position: relative;
+            cursor: pointer;
+        }
+        .calendar-nav {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.5rem;
+            color: var(--text-color);
+        }
+        .calendar-grid, .calendar-weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+        }
+        .calendar-weekdays div {
+            text-align: center;
+            font-weight: bold;
+            font-size: 0.8em;
+            color: var(--text-muted-color);
+        }
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 8px;
+            font-size: 0.85em;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+        .calendar-day.other-month {
+            opacity: 0.3;
+            cursor: default;
+        }
+        .calendar-day:not(.other-month):hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 10px var(--shadow-color);
+            z-index: 2;
+        }
+        .calendar-day.today {
+            border: 2px solid var(--primary-color);
+        }
+
+        #year-selector-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            max-height: 200px;
+            overflow-y: auto;
+            background-color: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: 0 4px 8px var(--shadow-color);
+            z-index: 10;
+        }
+        .year-item {
+            padding: 8px 20px;
+            cursor: pointer;
+            text-align: center;
+        }
+        .year-item:hover {
+            background-color: var(--bg-color);
+        }
+        .year-item.selected {
+            background-color: var(--primary-color);
+            color: var(--surface-color);
+        }
+
+
+        /* --- MODALES --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s;
+        }
+        .modal-overlay.open {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background-color: var(--surface-color);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            width: 90%;
+            max-width: 500px;
+            transform: scale(0.9);
+            transition: transform 0.3s ease, background-color 0.5s, border-radius 0.5s;
+            padding: calc(var(--spacing-unit) * 4);
+        }
+        .modal-overlay.open .modal-content {
+            transform: scale(1);
+        }
+        .modal-content h3 { margin-bottom: var(--spacing-unit); }
+        .modal-content input, .modal-content textarea {
+            width: 100%;
+            padding: var(--spacing-unit);
+            margin-top: var(--spacing-unit);
+            border: 1px solid var(--border-color);
+            border-radius: var(--button-border-radius);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+        .modal-buttons {
+            margin-top: calc(var(--spacing-unit) * 2);
+            display: flex;
+            justify-content: flex-end;
+            gap: var(--spacing-unit);
+        }
+        .modal-button {
+            padding: var(--spacing-unit) calc(var(--spacing-unit) * 2);
+            border: none;
+            border-radius: var(--button-border-radius);
+            cursor: pointer;
+        }
+        .modal-button.primary { background-color: var(--primary-color); color: white; }
+        .modal-button.secondary { background-color: var(--border-color); color: var(--text-color); }
+        .modal-button.danger { background-color: var(--danger-color); color: white; }
+        .modal-button:disabled {
+            background-color: var(--border-color);
+            color: var(--text-muted-color);
+            cursor: not-allowed;
+        }
+
+        #snapshot-detail-modal .modal-content {
+            text-align: left; /* Align text to the left for better readability */
+        }
+        #snapshot-detail-title {
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        #snapshot-detail-time {
+            color: var(--text-muted-color);
+            margin-bottom: 16px;
+        }
+        #snapshot-detail-count {
+            font-size: 4rem;
+            font-weight: bold;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+        #snapshot-detail-note {
+            font-size: 1.1rem;
+            min-height: 50px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 200px;
+            overflow-y: auto;
+            background-color: var(--bg-color);
+            padding: calc(var(--spacing-unit) * 2);
+            border-radius: var(--button-border-radius);
+        }
+
+        /* --- RESPONSIVE / VISTA MÓVIL --- */
+        @media (max-width: 900px) {
+            .main-container {
+                grid-template-columns: 1fr;
+                height: auto;
+                padding: var(--spacing-unit);
+            }
+            .main-content {
+                overflow-y: visible;
+            }
+            .sidebar {
+                flex-direction: column-reverse;
+            }
+            .options-menu {
+                position: fixed;
+                top: var(--spacing-unit);
+                left: var(--spacing-unit);
+                z-index: 101;
+            }
+        }
+    </style>
+</head>
+<body data-theme-mode="light" data-theme="light-default">
+    <div id="app-view">
+        <div class="main-container">
+            <div class="sidebar">
+                <div class="options-menu">
+                    <button id="options-btn" class="options-button" aria-label="Abrir menú de opciones"><svg viewBox="0 0 24 24"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg></button>
+                    <div id="options-dropdown" class="options-dropdown">
+                        <ul>
+                            <li id="change-mode-btn"><span>Cambiar Modo</span><span id="current-mode-label"></span></li>
+                            <li id="theme-selector-btn"><span>Cambiar Tema</span></li>
+                            <li><span>Modo Oscuro</span><label class="switch"><input type="checkbox" id="dark-mode-switch"><span class="slider"></span></label></li>
+                            <li><span>Modo Accesible</span><label class="switch"><input type="checkbox" id="accessible-mode-switch"><span class="slider"></span></label></li>
+                            <li><span>Anunciar Cambios</span><label class="switch"><input type="checkbox" id="tts-mode-switch"><span class="slider"></span></label></li>
+                            <li><span>Fiestuqui</span><label class="switch"><input type="checkbox" id="fiestuqui-mode-switch"><span class="slider"></span></label></li>
+                            <li id="export-data-btn">Exportar Datos (JSON)</li>
+                            <li id="import-data-btn">Importar Datos (JSON) <input type="file" id="import-file-input" style="display:none;" accept=".json"></li>
+                            <li id="share-widget-btn">Compartir Widget</li>
+                            <li id="delete-all-data-btn" class="danger-text"><span>Borrar Base de Datos</span></li>
+                        </ul>
+                    </div>
+                    <div id="theme-selector-panel" class="options-dropdown"></div>
+                </div>
+                <div class="gauge-container">
+                    <canvas id="gauge-canvas"></canvas>
+                    <div class="gauge-text">
+                        <div id="gauge-count" class="gauge-count" aria-live="polite">0</div>
+                        <div id="gauge-capacity" class="gauge-capacity"></div>
+                    </div>
+                    <button id="tts-btn" class="tts-button" aria-label="Leer estado en voz alta"><svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg></button>
+                </div>
+                <div class="controls">
+                    <button class="control-button" id="btn-minus-10">-10</button> <button class="control-button" id="btn-plus-10">+10</button>
+                    <button class="control-button" id="btn-minus-1">-1</button> <button class="control-button" id="btn-plus-1">+1</button>
+                    <button class="control-button" id="btn-custom">+/-</button> <button class="control-button primary" id="btn-save">Guardar instante</button>
+                    <button class="control-button danger" id="btn-reset">Reset</button>
+                </div>
+            </div>
+            <div class="main-content">
+                <div class="traffic-light-container">
+                    <div id="traffic-light" class="traffic-light"></div>
+                    <span id="traffic-light-label">Estado del aforo</span>
+                </div>
+                <div class="snapshots-container">
+                    <h3><span role="img" aria-label="Cámara">📸</span> Instantes Guardados (Últimas 24h)</h3>
+                    <ul id="snapshot-list" class="snapshot-list"></ul>
+                    <button id="export-csv-btn" class="control-button" style="width: 100%; margin-top: 10px;">Exportar a CSV</button>
+                </div>
+                <div class="history-container">
+                    <h3><span role="img" aria-label="Gráfica">📊</span> Histórico y Gráficas</h3>
+                    <div class="chart-controls">
+                        <p>Mostrar:</p>
+                        <button id="view-chart-btn" class="chart-view-btn active" data-view="bar">Gráfica</button>
+                        <button id="view-calendar-btn" class="chart-view-btn" data-view="calendar">Calendario</button>
+                        <p style="margin-left: auto;">Periodo:</p>
+                        <button id="timespan-week-btn" class="chart-view-btn" data-timespan="week">Semana</button>
+                        <button id="timespan-month-btn" class="chart-view-btn active" data-timespan="month">Mes</button>
+                        <button id="timespan-year-btn" class="chart-view-btn" data-timespan="year">Año</button>
+                    </div>
+                    <div id="history-bar-chart-container" class="chart-wrapper">
+                        <canvas id="history-bar-chart"></canvas>
+                    </div>
+                    <div id="calendar-container" style="display: none;"></div>
+                    <p style="margin-top: 20px;" id="line-chart-title">Evolución del día (selecciona una barra)</p>
+                    <div class="chart-wrapper">
+                        <canvas id="history-line-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="widget-view" class="widget-view" style="display: none;">
+         <div class="gauge-container" style="width: 300px; height: 150px;">
+            <canvas id="widget-gauge-canvas"></canvas>
+            <div class="gauge-text"><div id="widget-gauge-count" class="gauge-count">0</div><div id="widget-gauge-capacity" class="gauge-capacity"></div></div>
+        </div>
+    </div>
+    <div id="capacity-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h3>Establecer Aforo Máximo</h3><p>Introduce el número máximo de personas permitidas.</p>
+            <input type="number" id="capacity-input" placeholder="Ej: 150" min="1">
+            <div class="modal-buttons"><button id="cancel-capacity-btn" class="modal-button secondary">Cancelar</button><button id="confirm-capacity-btn" class="modal-button primary">Confirmar</button></div>
+        </div>
+    </div>
+    <div id="custom-value-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h3>Añadir/Restar Valor</h3><p>Introduce un número para sumar (ej: 50) o restar (ej: -25).</p>
+            <input type="number" id="custom-value-input" placeholder="0">
+            <div class="modal-buttons"><button id="cancel-custom-value-btn" class="modal-button secondary">Cancelar</button><button id="confirm-custom-value-btn" class="modal-button primary">Confirmar</button></div>
+        </div>
+    </div>
+    <div id="share-widget-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h3>Compartir Widget</h3><p>Copia y pega este código en tu página web para mostrar el contador.</p>
+            <textarea id="widget-code" readonly rows="4"></textarea>
+            <div class="modal-buttons"><button id="copy-widget-code-btn" class="modal-button secondary">Copiar</button><button id="close-share-modal-btn" class="modal-button primary">Cerrar</button></div>
+        </div>
+    </div>
+    <div id="confirm-reset-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h3>Reiniciar Contador</h3><p>¿Estás seguro? Esto reiniciará el contador actual a 0. El historial de instantes no se verá afectado.</p>
+            <div class="modal-buttons"><button id="cancel-reset-btn" class="modal-button secondary">Cancelar</button><button id="confirm-reset-btn" class="modal-button danger">Confirmar</button></div>
+        </div>
+    </div>
+    <div id="confirm-delete-all-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h3>Confirmar Borrado Total</h3><p>Esta acción borrará <strong>PERMANENTEMENTE</strong> todos los datos. Esta acción no se puede deshacer.</p>
+            <p>Estás a punto de borrar <strong id="delete-summary">0 instantes</strong>.</p>
+            <div class="modal-buttons">
+                <button id="cancel-delete-all-btn" class="modal-button secondary">Cancelar</button>
+                <button id="confirm-delete-all-btn" class="modal-button danger" disabled>Borrar en 5s</button>
+            </div>
+        </div>
+    </div>
+     <div id="save-snapshot-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h3>Guardar Instante</h3>
+            <p>Añade detalles opcionales para este registro.</p>
+            <input type="text" id="snapshot-title-input" placeholder="Nombre del evento (ej: Concierto)">
+            <textarea id="snapshot-note-input" rows="3" placeholder="Descripción (ej: Promoción 2x1)"></textarea>
+            <div class="modal-buttons">
+                <button id="cancel-save-snapshot-btn" class="modal-button secondary">Cancelar</button>
+                <button id="confirm-save-snapshot-btn" class="modal-button primary">Guardar</button>
+            </div>
+        </div>
+    </div>
+    <div id="day-notes-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 id="day-notes-title">Instantes del Día</h3>
+            <ul id="day-notes-list" class="snapshot-list"></ul>
+            <div class="modal-buttons">
+                <button id="close-day-notes-btn" class="modal-button primary">Cerrar</button>
+            </div>
+        </div>
+    </div>
+    <div id="snapshot-detail-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 id="snapshot-detail-title"></h3>
+            <p id="snapshot-detail-time"></p>
+            <div id="snapshot-detail-count"></div>
+            <p id="snapshot-detail-note"></p>
+            <div class="modal-buttons">
+                <button id="close-snapshot-detail-btn" class="modal-button primary">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="exceed-limit-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h3>Superar Límite de Aforo</h3>
+            <p id="exceed-limit-text"></p>
+            <div style="display: flex; align-items: center; margin-top: 16px; font-size: 0.9em;">
+                <input type="checkbox" id="set-new-limit-checkbox" style="width: auto; margin-right: 8px; transform: scale(1.2);">
+                <label for="set-new-limit-checkbox">Quiero establecer un nuevo límite manualmente</label>
+            </div>
+            <div class="modal-buttons">
+                <button id="cancel-exceed-btn" class="modal-button secondary">Cancelar</button>
+                <button id="confirm-exceed-btn" class="modal-button danger">Confirmar y Continuar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // Autor del código: Daniel Terroba Alcala
+    document.addEventListener('DOMContentLoaded', () => {
+        // Copyright (c) 2024 Daniel Terroba Alcala
+        let state = {
+            count: 0, capacity: 100, mode: 'limit', snapshots: [],
+            config: {
+                themeMode: 'light', theme: 'light-default', isAccessible: false,
+                announceChanges: false, showFigures: false, 
+                historyView: 'bar', barChartTimespan: 'month'
+            },
+            selectedDateForLineChart: null,
+            calendarDate: new Date()
+        };
+
+        const $ = (selector) => document.querySelector(selector);
+        const body = document.body;
+        const gaugeCountEl = $('#gauge-count'), gaugeCapacityEl = $('#gauge-capacity'), gaugeCanvas = $('#gauge-canvas');
+        const trafficLight = $('#traffic-light'), trafficLightLabel = $('#traffic-light-label');
+        const snapshotListEl = $('#snapshot-list');
+        const historyBarChartContainer = $('#history-bar-chart-container');
+        const historyBarChartCanvas = $('#history-bar-chart');
+        const calendarContainer = $('#calendar-container');
+        const historyLineChartCanvas = $('#history-line-chart');
+        const widgetView = $('#widget-view'), appView = $('#app-view');
+        const widgetGaugeCanvas = $('#widget-gauge-canvas'), widgetGaugeCount = $('#widget-gauge-count'), widgetGaugeCapacity = $('#widget-gauge-capacity');
+        const lineChartTitle = $('#line-chart-title');
+        
+        const controlButtons = { plus1: $('#btn-plus-1'), minus1: $('#btn-minus-1'), plus10: $('#btn-plus-10'), minus10: $('#btn-minus-10'), custom: $('#btn-custom'), save: $('#btn-save'), reset: $('#btn-reset'), exportCSV: $('#export-csv-btn') };
+        const options = { btn: $('#options-btn'), dropdown: $('#options-dropdown'), changeModeBtn: $('#change-mode-btn'), currentModeLabel: $('#current-mode-label'), darkModeSwitch: $('#dark-mode-switch'), accessibleModeSwitch: $('#accessible-mode-switch'), ttsModeSwitch: $('#tts-mode-switch'), fiestuquiModeSwitch: $('#fiestuqui-mode-switch'), themeSelectorBtn: $('#theme-selector-btn'), themeSelectorPanel: $('#theme-selector-panel'), exportDataBtn: $('#export-data-btn'), importDataBtn: $('#import-data-btn'), importFileInput: $('#import-file-input'), shareWidgetBtn: $('#share-widget-btn'), ttsBtn: $('#tts-btn'), deleteAllDataBtn: $('#delete-all-data-btn') };
+        const modals = { 
+            capacity: { overlay: $('#capacity-modal'), input: $('#capacity-input'), confirm: $('#confirm-capacity-btn'), cancel: $('#cancel-capacity-btn') }, 
+            customValue: { overlay: $('#custom-value-modal'), input: $('#custom-value-input'), confirm: $('#confirm-custom-value-btn'), cancel: $('#cancel-custom-value-btn') }, 
+            saveSnapshot: { overlay: $('#save-snapshot-modal'), titleInput: $('#snapshot-title-input'), noteInput: $('#snapshot-note-input'), confirm: $('#confirm-save-snapshot-btn'), cancel: $('#cancel-save-snapshot-btn') },
+            dayNotes: { overlay: $('#day-notes-modal'), title: $('#day-notes-title'), list: $('#day-notes-list'), close: $('#close-day-notes-btn') },
+            shareWidget: { overlay: $('#share-widget-modal'), code: $('#widget-code'), copy: $('#copy-widget-code-btn'), close: $('#close-share-modal-btn') }, 
+            confirmReset: { overlay: $('#confirm-reset-modal'), confirm: $('#confirm-reset-btn'), cancel: $('#cancel-reset-btn') }, 
+            confirmDeleteAll: { overlay: $('#confirm-delete-all-modal'), confirm: $('#confirm-delete-all-btn'), cancel: $('#cancel-delete-all-btn'), summary: $('#delete-summary') },
+            snapshotDetail: { 
+                overlay: $('#snapshot-detail-modal'),
+                title: $('#snapshot-detail-title'),
+                time: $('#snapshot-detail-time'),
+                count: $('#snapshot-detail-count'),
+                note: $('#snapshot-detail-note'),
+                close: $('#close-snapshot-detail-btn')
+            },
+            exceedLimit: {
+                overlay: $('#exceed-limit-modal'),
+                text: $('#exceed-limit-text'),
+                checkbox: $('#set-new-limit-checkbox'),
+                cancel: $('#cancel-exceed-btn'),
+                confirm: $('#confirm-exceed-btn')
+            } 
+        };
+        const chartControls = { 
+            viewBar: $('#view-chart-btn'), viewCalendar: $('#view-calendar-btn'),
+            timespanWeek: $('#timespan-week-btn'), timespanMonth: $('#timespan-month-btn'), timespanYear: $('#timespan-year-btn')
+        };
+
+        let barChart, lineChart, figures = [], animationFrameId, countdownInterval = null, pendingChange = { amount: 0 };
+
+        function saveState() { try { localStorage.setItem('personCounterState', JSON.stringify(state)); } catch (e) { console.error("Error saving state:", e); } }
+        function loadState() {
+            try {
+                const savedState = localStorage.getItem('personCounterState');
+                if (savedState) {
+                    const parsedState = JSON.parse(savedState);
+                    const defaultConfig = { themeMode: 'light', theme: 'light-default', isAccessible: false, announceChanges: false, showFigures: false, historyView: 'bar', barChartTimespan: 'month' };
+                    state.count = parsedState.count || 0;
+                    state.capacity = parsedState.capacity || 100;
+                    state.mode = parsedState.mode || 'limit';
+                    state.snapshots = parsedState.snapshots || [];
+                    state.config = { ...defaultConfig, ...(parsedState.config || {}) };
+                    state.selectedDateForLineChart = parsedState.selectedDateForLineChart || null;
+                    state.calendarDate = parsedState.calendarDate ? new Date(parsedState.calendarDate) : new Date();
+                } else { generateInitialData(); saveState(); }
+            } catch (e) { console.error("Error loading state:", e); localStorage.removeItem('personCounterState'); }
+        }
+        function generateInitialData() {
+            const generatedSnapshots = [];
+            const now = new Date();
+            const thirtyHoursAgo = new Date(now.getTime() - 30 * 60 * 60 * 1000);
+
+            for (let i = 30; i > 0; i--) {
+                const day = new Date();
+                day.setDate(now.getDate() - i);
+                const dayOfWeek = day.getDay();
+                if ([0, 4, 5, 6].includes(dayOfWeek)) {
+                    let peakCount, startHour, endHour;
+                    switch(dayOfWeek) {
+                        case 4: peakCount = 150 + Math.random() * 100; startHour = 23; endHour = 3; break;
+                        case 5: peakCount = 300 + Math.random() * 200; startHour = 23; endHour = 5; break;
+                        case 6: peakCount = 400 + Math.random() * 250; startHour = 23; endHour = 6; break;
+                        case 0: peakCount = 100 + Math.random() * 100; startHour = 22; endHour = 2; break;
+                    }
+                    let hour = startHour;
+                    while(hour !== endHour) {
+                        const timestamp = new Date(day);
+                        timestamp.setHours(hour, Math.random() * 60, Math.random() * 60);
+                        
+                        if (timestamp < thirtyHoursAgo) {
+                            const progress = hour < startHour ? (hour + 24 - startHour) : (hour - startHour);
+                            const totalDuration = startHour > endHour ? (endHour + 24 - startHour) : (endHour - startHour);
+                            const sineFactor = Math.sin((progress / totalDuration) * Math.PI);
+                            let currentCount = Math.floor(peakCount * sineFactor) + (Math.random() * 20 - 10);
+                            generatedSnapshots.push({
+                                id: timestamp.getTime(), timestamp: timestamp.toISOString(),
+                                count: Math.max(0, Math.floor(currentCount)),
+                                mode: 'limit', capacity: 500
+                            });
+                        }
+                        hour = (hour + 1) % 24;
+                    }
+                }
+            }
+            state.snapshots = generatedSnapshots.sort((a,b) => new Date(a.timestamp) - new Date(b.timestamp));
+        }
+        
+        function changeCount(amount) {
+            const newCount = state.count + amount;
+            
+            if (state.mode === 'limit' && newCount > state.capacity && amount > 0) {
+                pendingChange.amount = amount;
+                modals.exceedLimit.text.textContent = `Estás a punto de superar el aforo máximo de ${state.capacity} personas (nuevo total: ${newCount}). ¿Deseas continuar?`;
+                openModal(modals.exceedLimit);
+                return; // Stop execution until user responds
+            }
+
+            state.count = Math.max(0, newCount);
+            checkAndScaleCapacity(); // This is fine for decrements or non-limit mode
+            updateUI();
+            saveState();
+            if (state.config.announceChanges) speak(`Contador actualizado, ${amount > 0 ? 'más' : 'menos'} ${Math.abs(amount)}. Total ${state.count}`);
+        }
+        function resetCounter() { state.count = 0; updateUI(); saveState(); }
+        function deleteAllData() {
+            localStorage.removeItem('personCounterState');
+            state = { count: 0, capacity: 100, mode: 'limit', snapshots: [], config: { themeMode: 'light', theme: 'light-default', isAccessible: false, announceChanges: false, showFigures: false, historyView: 'bar', barChartTimespan: 'month' }, selectedDateForLineChart: null, calendarDate: new Date() };
+            figures = []; updateUI();
+        }
+        function checkAndScaleCapacity() {
+            if (state.mode === 'limit' && state.count > state.capacity) {
+                let newCapacity = state.capacity < 10 ? 100 : state.capacity;
+                while (newCapacity < state.count && newCapacity < 1000000) newCapacity *= 10;
+                state.capacity = Math.min(newCapacity, 1000000);
+            }
+        }
+        function saveSnapshot(title = '', note = '') { 
+            state.snapshots.unshift({ id: Date.now(), timestamp: new Date().toISOString(), count: state.count, mode: state.mode, capacity: state.capacity, title, note }); 
+            updateUI(); 
+            saveState(); 
+        }
+        function deleteSnapshot(id) { state.snapshots = state.snapshots.filter(snap => snap.id !== id); updateUI(); saveState(); }
+
+        function updateUI() {
+            gaugeCountEl.textContent = state.count; widgetGaugeCount.textContent = state.count;
+            if (state.mode === 'limit') {
+                const percentage = state.capacity > 0 ? Math.round((state.count / state.capacity) * 100) : 0;
+                const capacityText = `/ ${state.capacity} (${percentage}%)`;
+                gaugeCapacityEl.textContent = capacityText; widgetGaugeCapacity.textContent = capacityText;
+                updateTrafficLight(); trafficLight.parentElement.style.display = 'flex';
+            } else {
+                gaugeCapacityEl.textContent = 'Modo Libre'; widgetGaugeCapacity.textContent = 'Libre';
+                trafficLight.parentElement.style.display = 'none';
+            }
+            renderSnapshotList(); updateGaugeFigures(); drawGauge(gaugeCanvas, state.count, state.capacity, state.mode); drawGauge(widgetGaugeCanvas, state.count, state.capacity, state.mode); renderCharts();
+            options.currentModeLabel.textContent = state.mode === 'limit' ? 'Con Límite' : 'Libre';
+            options.darkModeSwitch.checked = state.config.themeMode === 'dark';
+            options.accessibleModeSwitch.checked = state.config.isAccessible;
+            options.ttsModeSwitch.checked = state.config.announceChanges;
+            options.fiestuquiModeSwitch.checked = state.config.showFigures;
+            body.setAttribute('data-theme-mode', state.config.themeMode);
+            body.setAttribute('data-theme', state.config.theme);
+            body.classList.toggle('accessible', state.config.isAccessible);
+            updateThemeSelection();
+            
+            chartControls.viewBar.classList.toggle('active', state.config.historyView === 'bar');
+            chartControls.viewCalendar.classList.toggle('active', state.config.historyView === 'calendar');
+            historyBarChartContainer.style.display = state.config.historyView === 'bar' ? 'block' : 'none';
+            calendarContainer.style.display = state.config.historyView === 'calendar' ? 'block' : 'none';
+
+            Object.keys(chartControls).filter(k => k.startsWith('timespan')).forEach(key => {
+                chartControls[key].classList.toggle('active', state.config.barChartTimespan === key.split('-')[1]);
+            });
+        }
+        function updateTrafficLight() {
+            const percentage = state.capacity > 0 ? (state.count / state.capacity) * 100 : 0;
+            trafficLight.className = 'traffic-light'; let label = '';
+            if (percentage < 75) { trafficLight.classList.add('green'); label = 'Aforo bajo control'; } 
+            else if (percentage < 95) { trafficLight.classList.add('yellow'); label = 'Aforo acercándose al límite'; } 
+            else { trafficLight.classList.add('red'); label = 'Aforo completo o superado'; }
+            trafficLightLabel.textContent = label;
+        }
+        function renderSnapshotList() {
+            snapshotListEl.innerHTML = '';
+            const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+            
+            const recentSnapshots = state.snapshots.filter(s => new Date(s.timestamp) > twentyFourHoursAgo);
+            const latest20 = recentSnapshots.slice(0, 20);
+
+            if (latest20.length === 0) {
+                snapshotListEl.innerHTML = '<li>No hay instantes guardados en las últimas 24h.</li>';
+                return;
+            }
+            
+            latest20.forEach(snap => {
+                const li = document.createElement('li');
+                li.className = 'snapshot-item';
+                const date = new Date(snap.timestamp);
+                const formattedTime = date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+                
+                let truncatedTitle = snap.title || '';
+                if (truncatedTitle.length > 30) {
+                    truncatedTitle = truncatedTitle.substring(0, 30) + '...';
+                }
+                const titleHtml = snap.title ? `<span class="snapshot-title" title="${snap.title}">${truncatedTitle}</span>` : '';
+
+                const noteHtml = snap.note ? `<span class="snapshot-details" title="${snap.note}">${snap.note}</span>` : '';
+
+                li.innerHTML = `
+                    <div class="snapshot-info">
+                        ${titleHtml}
+                        <span><strong>${snap.count}</strong><small>${snap.mode === 'limit' ? ` / ${snap.capacity}` : ''}</small></span>
+                        ${noteHtml}
+                    </div>
+                    <small class="snapshot-time">${formattedTime}</small>
+                    <button class="delete-snapshot" data-id="${snap.id}" aria-label="Eliminar instante">&times;</button>
+                `;
+                snapshotListEl.appendChild(li);
+            });
+        }
+        
+        function drawStickFigure(ctx, x, y, size, color, phase) {
+            ctx.strokeStyle = color;
+            ctx.lineWidth = size / 10;
+            ctx.beginPath();
+            // Head
+            ctx.arc(x, y - size * 0.35, size * 0.15, 0, Math.PI * 2);
+            // Body
+            ctx.moveTo(x, y - size * 0.2);
+            ctx.lineTo(x, y + size * 0.2);
+            // Arms
+            const armAngle = Math.sin(phase) * 0.8;
+            ctx.moveTo(x, y);
+            ctx.lineTo(x - size * 0.2, y - size * 0.1 + Math.sin(phase) * 10);
+            ctx.moveTo(x, y);
+            ctx.lineTo(x + size * 0.2, y - size * 0.1 - Math.sin(phase) * 10);
+            // Legs
+            ctx.moveTo(x, y + size * 0.2);
+            ctx.lineTo(x - size * 0.15, y + size * 0.5 + Math.cos(phase) * 5);
+            ctx.moveTo(x, y + size * 0.2);
+            ctx.lineTo(x + size * 0.15, y + size * 0.5 - Math.cos(phase) * 5);
+            ctx.stroke();
+        }
+
+        function updateGaugeFigures() {
+            if (!state.config.showFigures) {
+                figures = [];
+                return;
+            }
+            const targetCount = state.count;
+            if (targetCount > 500) { // Performance cap
+                figures = figures.slice(0, 500);
+            }
+
+            // Add figures if needed
+            while (figures.length < targetCount && figures.length < 500) {
+                const rect = gaugeCanvas.getBoundingClientRect();
+                const centerX = rect.width / 2;
+                const centerY = rect.height;
+                const radius = Math.min(rect.width / 2, rect.height) * 0.9;
+                const lineWidth = radius * 0.2;
+                const innerRadius = radius - lineWidth; // Figures can spawn inside the whole area
+
+                const angle = Math.PI + Math.random() * Math.PI; // Random angle for the upper semi-circle
+                const r = Math.sqrt(Math.random()) * innerRadius; // Use sqrt for uniform distribution over area
+
+                figures.push({
+                    x: centerX + r * Math.cos(angle),
+                    y: centerY + r * Math.sin(angle),
+                    size: Math.random() * 15 + 10,
+                    color: `hsl(${Math.random() * 360}, 70%, 60%)`,
+                    phase: Math.random() * Math.PI * 2,
+                    speed: Math.random() * 0.1 + 0.05,
+                    vx: (Math.random() - 0.5) * 1.5, // Random initial velocity X
+                    vy: (Math.random() - 0.5) * 1.5  // Random initial velocity Y
+                });
+            }
+
+            // Remove figures if needed
+            if (figures.length > targetCount) {
+                figures.splice(targetCount);
+            }
+        }
+
+        function animateGauge() {
+            /* Daniel Terroba A. - Developer */
+            animationFrameId = requestAnimationFrame(animateGauge);
+            const ctx = gaugeCanvas.getContext('2d');
+            let { width, height } = gaugeCanvas.getBoundingClientRect();
+             // Ensure canvas is not 0x0, which can happen during resize
+            if (width === 0 || height === 0) return;
+            
+            // Set canvas drawing surface size if it's different from its display size
+            if (gaugeCanvas.width !== Math.round(width * devicePixelRatio) || gaugeCanvas.height !== Math.round(height * devicePixelRatio)) {
+                gaugeCanvas.width = width * devicePixelRatio;
+                gaugeCanvas.height = height * devicePixelRatio;
+                ctx.scale(devicePixelRatio, devicePixelRatio);
+            } else {
+                 ctx.clearRect(0, 0, gaugeCanvas.width, gaugeCanvas.height);
+            }
+            
+            drawGauge(gaugeCanvas, state.count, state.capacity, state.mode);
+
+            if (state.config.showFigures) {
+                const centerX = width / 2;
+                const centerY = height;
+                const radius = Math.min(width / 2, height) * 0.9;
+                const lineWidth = radius * 0.2;
+                const innerRadius = radius - lineWidth;
+
+                figures.forEach(fig => {
+                    fig.phase += fig.speed;
+
+                    // Update position
+                    fig.x += fig.vx;
+                    fig.y += fig.vy;
+
+                    // Boundary checks
+                    // Bottom boundary (the diameter of the semi-circle)
+                    if (fig.y > centerY) {
+                        fig.y = centerY;
+                        fig.vy *= -0.9; // Inelastic collision
+                    }
+
+                    // Circular boundary
+                    const dx = fig.x - centerX;
+                    const dy = fig.y - centerY;
+                    const distanceSq = dx * dx + dy * dy;
+
+                    if (distanceSq > innerRadius * innerRadius) {
+                        const distance = Math.sqrt(distanceSq);
+                        // Move figure back inside
+                        const overlap = distance - innerRadius;
+                        fig.x -= (dx / distance) * overlap;
+                        fig.y -= (dy / distance) * overlap;
+
+                        // Reflect velocity vector
+                        const nx = dx / distance;
+                        const ny = dy / distance;
+                        const dot_product = fig.vx * nx + fig.vy * ny;
+                        fig.vx -= 2 * dot_product * nx;
+                        fig.vy -= 2 * dot_product * ny;
+                    }
+                    
+                    drawStickFigure(ctx, fig.x, fig.y, fig.size, fig.color, fig.phase);
+                });
+            }
+        }
+        
+        function drawGauge(canvas, value, max, mode) {
+            const ctx = canvas.getContext('2d');
+            // Dimensions are now managed by the caller (animateGauge)
+            let { width, height } = canvas;
+            width /= devicePixelRatio; // Get CSS pixel size
+            height /= devicePixelRatio;
+            
+            const centerX = width / 2;
+            const centerY = height;
+            const radius = Math.min(width / 2, height) * 0.9;
+            const lineWidth = radius * 0.2;
+
+            ctx.lineCap = 'round';
+
+            // Background Arc
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, Math.PI, 0, false);
+            ctx.lineWidth = lineWidth;
+            ctx.strokeStyle = getComputedStyle(body).getPropertyValue('--border-color');
+            ctx.stroke();
+
+            if (mode === 'limit' && max > 0) {
+                const percentage = Math.min(value / max, 1);
+                const endAngle = Math.PI + (Math.PI * percentage);
+
+                const green = getComputedStyle(body).getPropertyValue('--accent-color').trim();
+                const yellow = getComputedStyle(body).getPropertyValue('--warning-color').trim();
+                const red = getComputedStyle(body).getPropertyValue('--danger-color').trim();
+                
+                let gaugeColor = green;
+                if (percentage >= 0.75 && percentage < 0.95) gaugeColor = yellow;
+                else if (percentage >= 0.95) gaugeColor = red;
+
+                // Foreground Arc
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius, Math.PI, endAngle, false);
+                ctx.lineWidth = lineWidth;
+                ctx.strokeStyle = gaugeColor;
+                ctx.stroke();
+            }
+        }
+
+        function renderCharts() { 
+            if(state.config.historyView === 'bar') {
+                renderBarChart(); 
+            } else {
+                renderCalendarView();
+            }
+            renderLineChart();
+        }
+
+        function renderCalendarView() {
+            calendarContainer.innerHTML = '';
+            const header = document.createElement('div');
+            header.className = 'calendar-header';
+            const prevBtn = document.createElement('button');
+            prevBtn.className = 'calendar-nav'; prevBtn.innerHTML = '&lt;';
+            const nextBtn = document.createElement('button');
+            nextBtn.className = 'calendar-nav'; nextBtn.innerHTML = '&gt;';
+            
+            const titleContainer = document.createElement('div');
+            titleContainer.className = 'calendar-title-container';
+            const title = document.createElement('span');
+            title.id = 'calendar-title';
+            title.style.cursor = 'pointer';
+
+            prevBtn.addEventListener('click', () => navigateCalendar(-1));
+            nextBtn.addEventListener('click', () => navigateCalendar(1));
+            title.addEventListener('click', () => toggleYearSelector());
+
+            const grid = document.createElement('div');
+            const weekdays = document.createElement('div');
+            weekdays.className = 'calendar-weekdays';
+            ['L', 'M', 'X', 'J', 'V', 'S', 'D'].forEach(day => {
+                const dayEl = document.createElement('div');
+                dayEl.textContent = day;
+                weekdays.appendChild(dayEl);
+            });
+
+            const date = state.calendarDate;
+            const year = date.getFullYear();
+            const month = date.getMonth();
+
+            title.textContent = date.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+            grid.className = 'calendar-grid';
+
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const firstDayIndex = (firstDay.getDay() + 6) % 7;
+            const lastDayDate = lastDay.getDate();
+
+            const peakData = state.snapshots.reduce((acc, snap) => {
+                const dayKey = snap.timestamp.split('T')[0];
+                if (!acc[dayKey] || snap.count > acc[dayKey].count) acc[dayKey] = {count: snap.count, capacity: snap.capacity};
+                return acc;
+            }, {});
+
+            for (let i = 0; i < firstDayIndex; i++) {
+                grid.appendChild(document.createElement('div'));
+            }
+
+            for (let i = 1; i <= lastDayDate; i++) {
+                const dayEl = document.createElement('div');
+                dayEl.className = 'calendar-day';
+                dayEl.textContent = i;
+                const dayKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+                if (peakData[dayKey]) {
+                    const { count, capacity } = peakData[dayKey];
+                    const percentage = capacity > 0 ? count / capacity : 0;
+                    const primaryColor = getComputedStyle(body).getPropertyValue('--primary-color');
+                    const color = primaryColor.startsWith('#') ? primaryColor : '#3498db';
+                    const r = parseInt(color.slice(1, 3), 16);
+                    const g = parseInt(color.slice(3, 5), 16);
+                    const b = parseInt(color.slice(5, 7), 16);
+                    dayEl.style.backgroundColor = `rgba(${r}, ${g}, ${b}, ${percentage})`;
+                    if(percentage > 0.6) dayEl.style.color = 'var(--surface-color)';
+                }
+                const today = new Date();
+                if (i === today.getDate() && month === today.getMonth() && year === today.getFullYear()) {
+                    dayEl.classList.add('today');
+                }
+                dayEl.addEventListener('click', () => {
+                    state.selectedDateForLineChart = dayKey;
+                    saveState();
+                    updateUI(); 
+                    
+                    const snapshotsForDay = state.snapshots.filter(s => s.timestamp.startsWith(dayKey));
+                    if (snapshotsForDay.length > 0) {
+                        showDaySnapshots(dayKey);
+                    }
+                });
+                grid.appendChild(dayEl);
+            }
+            
+            const yearSelector = document.createElement('div');
+            yearSelector.id = 'year-selector-dropdown';
+            yearSelector.style.display = 'none';
+
+            titleContainer.append(title, yearSelector);
+            header.append(prevBtn, titleContainer, nextBtn);
+            calendarContainer.append(header, weekdays, grid);
+        }
+
+        function toggleYearSelector() {
+            const selector = $('#year-selector-dropdown');
+            if (!selector || selector.style.display === 'block') { if(selector) selector.style.display = 'none'; return; }
+            selector.innerHTML = '';
+            const currentYear = state.calendarDate.getFullYear();
+            for (let year = currentYear - 10; year <= currentYear + 10; year++) {
+                const yearEl = document.createElement('div'); yearEl.className = 'year-item';
+                if (year === currentYear) yearEl.classList.add('selected');
+                yearEl.textContent = year; yearEl.dataset.year = year;
+                yearEl.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const selectedYear = parseInt(e.target.dataset.year, 10);
+                    state.calendarDate.setFullYear(selectedYear);
+                    selector.style.display = 'none';
+                    state.selectedDateForLineChart = null;
+                    updateUI(); saveState();
+                });
+                selector.appendChild(yearEl);
+            }
+            selector.style.display = 'block';
+            selector.querySelector('.selected')?.scrollIntoView({ block: 'center' });
+        }
+
+
+        function navigateCalendar(direction) {
+            const date = state.calendarDate;
+            date.setMonth(date.getMonth() + direction);
+            state.selectedDateForLineChart = null;
+            updateUI();
+            saveState();
+        }
+
+        function showDaySnapshots(dayKey) {
+            const snapshotsForDay = state.snapshots.filter(s => s.timestamp.startsWith(dayKey)).sort((a,b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+            modals.dayNotes.list.innerHTML = '';
+
+            if (snapshotsForDay.length === 0) {
+                modals.dayNotes.list.innerHTML = '<li>No hay instantes guardados para este día.</li>';
+            } else {
+                snapshotsForDay.forEach(snap => {
+                    const li = document.createElement('li');
+                    li.className = 'snapshot-item';
+                    li.style.cursor = 'pointer';
+                    li.dataset.id = snap.id;
+                    const date = new Date(snap.timestamp);
+                    const time = date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+                    
+                    li.innerHTML = `
+                        <div class="snapshot-info">
+                            <span class="snapshot-title">${snap.title || 'Instante'}</span>
+                            <span><strong>${snap.count}</strong><small>${snap.mode === 'limit' ? ` / ${snap.capacity}` : ''}</small></span>
+                            <span class="snapshot-details" title="${snap.note || ''}">${snap.note || ''}</span>
+                        </div>
+                        <small class="snapshot-time">${time}</small>
+                    `;
+                    modals.dayNotes.list.appendChild(li);
+                });
+            }
+            
+            const date = new Date(dayKey + 'T12:00:00Z');
+            modals.dayNotes.title.textContent = `Instantes del ${date.toLocaleDateString('es-ES', { dateStyle: 'long' })}`;
+            openModal(modals.dayNotes);
+        }
+
+        function showSnapshotDetails(id) {
+            const snapshot = state.snapshots.find(s => s.id === id);
+            if (!snapshot) return;
+
+            modals.snapshotDetail.title.textContent = snapshot.title || 'Instante Guardado';
+            const date = new Date(snapshot.timestamp);
+            modals.snapshotDetail.time.textContent = date.toLocaleString('es-ES', { dateStyle: 'full', timeStyle: 'short'});
+            modals.snapshotDetail.count.innerHTML = `${snapshot.count} <span style="font-size: 1.5rem; color: var(--text-muted-color);">${snapshot.mode === 'limit' ? `/ ${snapshot.capacity}` : 'personas'}</span>`;
+            modals.snapshotDetail.note.textContent = snapshot.note || 'No hay descripción adicional.';
+
+            closeModal(modals.dayNotes);
+            openModal(modals.snapshotDetail);
+        }
+
+        function renderBarChart() {
+            const now = new Date();
+            let dataAggregator = {};
+            let formatOptions, dateKeyFn, filterFn;
+            switch (state.config.barChartTimespan) {
+                case 'year':
+                    formatOptions = { month: 'short', year: 'numeric' };
+                    dateKeyFn = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                    filterFn = ([key]) => new Date(key).getFullYear() === now.getFullYear();
+                    break;
+                case 'month':
+                    formatOptions = { day: 'numeric', month: 'short' };
+                    dateKeyFn = d => d.toISOString().split('T')[0];
+                    const thirtyDaysAgo = new Date(); thirtyDaysAgo.setDate(now.getDate() - 30);
+                    filterFn = ([key]) => new Date(key) >= thirtyDaysAgo;
+                    break;
+                default: // week
+                    formatOptions = { weekday: 'short', day: 'numeric' };
+                    dateKeyFn = d => d.toISOString().split('T')[0];
+                    const sevenDaysAgo = new Date(); sevenDaysAgo.setDate(now.getDate() - 7);
+                    filterFn = ([key]) => new Date(key) >= sevenDaysAgo;
+                    break;
+            }
+            state.snapshots.forEach(snap => {
+                const key = dateKeyFn(new Date(snap.timestamp));
+                if (!dataAggregator[key] || snap.count > dataAggregator[key]) dataAggregator[key] = snap.count;
+            });
+            const sortedEntries = Object.entries(dataAggregator).sort((a, b) => new Date(a[0]) - new Date(b[0])).filter(filterFn);
+            const labels = sortedEntries.map(([key]) => new Date(key + 'T12:00:00Z').toLocaleDateString('es-ES', formatOptions));
+            const data = sortedEntries.map(([, value]) => value);
+            const rawKeys = sortedEntries.map(([key]) => key);
+
+            if (barChart) barChart.destroy();
+            barChart = new Chart(historyBarChartCanvas, {
+                type: 'bar',
+                data: { labels, datasets: [{ label: 'Ocupación Máxima', data, backgroundColor: getComputedStyle(body).getPropertyValue('--primary-color'), borderRadius: 4 }] },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, ticks: { color: getComputedStyle(body).getPropertyValue('--text-muted-color') }, grid: { color: getComputedStyle(body).getPropertyValue('--border-color') } }, x: { ticks: { color: getComputedStyle(body).getPropertyValue('--text-muted-color') }, grid: { display: false } } },
+                    onClick: (evt) => {
+                        const points = barChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
+                        if (points.length) {
+                            const key = rawKeys[points[0].index];
+                            if (state.config.barChartTimespan !== 'year') {
+                                state.selectedDateForLineChart = key;
+                                updateUI(); saveState();
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        function renderLineChart() {
+            const ctx = historyLineChartCanvas.getContext('2d');
+            if (lineChart) lineChart.destroy();
+            
+            const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+            const recentSnapshots = state.snapshots.filter(s => new Date(s.timestamp) > twentyFourHoursAgo);
+            const latest20 = recentSnapshots.slice(0, 20).reverse();
+
+            if (latest20.length === 0) {
+                ctx.clearRect(0, 0, historyLineChartCanvas.width, historyLineChartCanvas.height);
+                lineChartTitle.textContent = 'Evolución (Últimas 24h)';
+                ctx.save();
+                ctx.textAlign = 'center';
+                ctx.fillStyle = getComputedStyle(body).getPropertyValue('--text-muted-color');
+                ctx.font = `16px ${getComputedStyle(body).fontFamily}`;
+                ctx.fillText('No hay datos en las últimas 24 horas', historyLineChartCanvas.width / 2, 50);
+                ctx.restore();
+                return;
+            }
+
+            lineChartTitle.textContent = 'Evolución (Últimas 24h)';
+            const lineLabels = latest20.map(s => new Date(s.timestamp).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }));
+            const lineData = latest20.map(s => s.count);
+            
+            lineChart = new Chart(historyLineChartCanvas, {
+                type: 'line',
+                data: { labels: lineLabels, datasets: [{ label: 'Evolución', data: lineData, borderColor: getComputedStyle(body).getPropertyValue('--primary-color'), backgroundColor: `${getComputedStyle(body).getPropertyValue('--primary-color')}33`, fill: true, tension: 0.3 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { color: getComputedStyle(body).getPropertyValue('--text-muted-color') }, grid: { color: getComputedStyle(body).getPropertyValue('--border-color') } }, x: { ticks: { color: getComputedStyle(body).getPropertyValue('--text-muted-color') }, grid: { display: false } } } }
+            });
+        }
+        
+        function setupThemeSelector() {
+            const lightThemes = [ { id: 'light-default', name: 'Azul Cielo' }, { id: 'light-forest', name: 'Bosque Sereno' }, { id: 'light-sunset', name: 'Atardecer' }, { id: 'light-minimal', name: 'Minimalista' } ];
+            const darkThemes = [ { id: 'dark-default', name: 'Azul Nocturno' }, { id: 'dark-neon', name: 'Fiesta Neón' }, { id: 'dark-ocean', name: 'Océano Profundo' }, { id: 'dark-space', name: 'Cosmos' } ];
+            options.themeSelectorPanel.innerHTML = '';
+            function createThemeOptions(container, themes) {
+                themes.forEach(theme => {
+                    const option = document.createElement('div');
+                    option.className = 'theme-option'; option.dataset.theme = theme.id; option.title = theme.name;
+                    option.addEventListener('click', () => {
+                        const [mode] = theme.id.split('-');
+                        state.config.themeMode = mode; state.config.theme = theme.id;
+                        updateUI(); saveState();
+                    });
+                    container.appendChild(option);
+                });
+            }
+            const lightTitle = document.createElement('h4'); lightTitle.textContent = 'Temas Claros';
+            const lightContainer = document.createElement('div'); lightContainer.className = 'theme-options';
+            createThemeOptions(lightContainer, lightThemes);
+            const darkTitle = document.createElement('h4'); darkTitle.textContent = 'Temas Oscuros';
+            const darkContainer = document.createElement('div'); darkContainer.className = 'theme-options';
+            createThemeOptions(darkContainer, darkThemes);
+            options.themeSelectorPanel.append(lightTitle, lightContainer, darkTitle, darkContainer);
+        }
+        function updateThemeSelection() { document.querySelectorAll('.theme-option').forEach(el => el.classList.toggle('selected', el.dataset.theme === state.config.theme)); }
+        function exportData(type) {
+            if (type === 'json') {
+                const dataStr = JSON.stringify(state, null, 2);
+                const blob = new Blob([dataStr], { type: 'application/json' });
+                downloadFile(blob, 'contador_personas_backup.json');
+            } else if (type === 'csv') {
+                let csvContent = 'data:text/csv;charset=utf-8,';
+                csvContent += 'ID,Timestamp,Count,Capacity,Mode,Title,Note\r\n';
+                state.snapshots.forEach(snap => {
+                    const row = [snap.id, snap.timestamp, snap.count, snap.capacity, snap.mode, `"${snap.title || ''}"`, `"${snap.note || ''}"`].join(',');
+                    csvContent += row + '\r\n';
+                });
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement('a');
+                link.setAttribute('href', encodedUri);
+                link.setAttribute('download', 'snapshots.csv');
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        }
+
+        function downloadFile(blob, fileName) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function importData(file) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                try {
+                    const importedState = JSON.parse(event.target.result);
+                    if (typeof importedState.count !== 'undefined' && Array.isArray(importedState.snapshots)) {
+                        state = { ...state, ...importedState };
+                        saveState();
+                        updateUI();
+                        alert('Datos importados correctamente.');
+                    } else {
+                        throw new Error('Formato de archivo no válido.');
+                    }
+                } catch (e) {
+                    alert('Error al importar el archivo: ' + e.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function speak(text) { if ('speechSynthesis' in window) { const u = new SpeechSynthesisUtterance(text); u.lang = 'es-ES'; window.speechSynthesis.cancel(); window.speechSynthesis.speak(u); } }
+        
+        function setupWidgetView() {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('widget') === 'true') {
+                appView.style.display = 'none';
+                widgetView.style.display = 'flex';
+                document.body.classList.add('widget-mode');
+                // Listen for changes from other tabs
+                window.addEventListener('storage', (e) => {
+                    if (e.key === 'personCounterState') {
+                        loadState();
+                        updateUI();
+                    }
+                });
+            }
+        }
+
+        function openModal(modal) { modal.overlay.classList.add('open'); if (modal.input) modal.input.focus(); }
+        function closeModal(modal) { modal.overlay.classList.remove('open'); }
+        function toggleOptionsMenu(forceClose = false) { if (forceClose || options.dropdown.classList.contains('open')) { options.dropdown.classList.remove('open'); } else { options.dropdown.classList.add('open'); options.themeSelectorPanel.classList.remove('open'); } }
+        function toggleThemeSelector(forceClose = false) { if (forceClose || options.themeSelectorPanel.classList.contains('open')) { options.themeSelectorPanel.classList.remove('open'); } else { options.themeSelectorPanel.classList.add('open'); options.dropdown.classList.remove('open'); } }
+
+        function addEventListeners() {
+            Object.values(controlButtons).forEach(btn => btn.addEventListener('click', (e) => {
+                switch(e.currentTarget.id) {
+                    case 'btn-plus-1': changeCount(1); break; case 'btn-minus-1': changeCount(-1); break;
+                    case 'btn-plus-10': changeCount(10); break; case 'btn-minus-10': changeCount(-10); break;
+                    case 'btn-save': openModal(modals.saveSnapshot); break; 
+                    case 'btn-reset': openModal(modals.confirmReset); break;
+                    case 'btn-custom': openModal(modals.customValue); break; 
+                    case 'export-csv-btn': exportData('csv'); break;
+                }
+            }));
+            options.btn.addEventListener('click', e => { e.stopPropagation(); toggleOptionsMenu(); });
+            options.changeModeBtn.addEventListener('click', () => { toggleOptionsMenu(true); state.mode = state.mode === 'limit' ? 'free' : 'limit'; if (state.mode === 'limit') openModal(modals.capacity); updateUI(); saveState(); });
+            options.darkModeSwitch.addEventListener('change', e => { state.config.themeMode = e.target.checked ? 'dark' : 'light'; state.config.theme = state.config.theme.replace(e.target.checked ? 'light' : 'dark', e.target.checked ? 'dark' : 'light'); updateUI(); saveState(); });
+            options.accessibleModeSwitch.addEventListener('change', e => { state.config.isAccessible = e.target.checked; updateUI(); saveState(); });
+            options.ttsModeSwitch.addEventListener('change', e => { state.config.announceChanges = e.target.checked; saveState(); });
+            options.fiestuquiModeSwitch.addEventListener('change', e => { state.config.showFigures = e.target.checked; updateGaugeFigures(); saveState(); });
+            options.themeSelectorBtn.addEventListener('click', e => { e.stopPropagation(); toggleThemeSelector(); });
+            options.exportDataBtn.addEventListener('click', () => exportData('json'));
+            options.importDataBtn.addEventListener('click', () => options.importFileInput.click());
+            options.importFileInput.addEventListener('change', e => { if(e.target.files.length > 0) importData(e.target.files[0]); });
+            options.shareWidgetBtn.addEventListener('click', () => { const url = `${window.location.href.split('?')[0]}?widget=true`; modals.shareWidget.code.value = `<iframe src="${url}" width="320" height="170" style="border:none; border-radius: 8px;"></iframe>`; openModal(modals.shareWidget); toggleOptionsMenu(true); });
+            options.ttsBtn.addEventListener('click', () => speak(state.mode === 'limit' ? `Hay ${state.count} de ${state.capacity}.` : `Hay ${state.count}.`));
+            options.deleteAllDataBtn.addEventListener('click', () => {
+                toggleOptionsMenu(true);
+                modals.confirmDeleteAll.summary.textContent = `${state.snapshots.length} instantes`;
+                openModal(modals.confirmDeleteAll);
+                let count = 5;
+                const btn = modals.confirmDeleteAll.confirm;
+                btn.disabled = true; btn.textContent = `Borrar en ${count}s`;
+                countdownInterval = setInterval(() => {
+                    count--;
+                    if (count > 0) btn.textContent = `Borrar en ${count}s`;
+                    else { clearInterval(countdownInterval); countdownInterval = null; btn.textContent = 'Confirmar Borrado'; btn.disabled = false; }
+                }, 1000);
+            });
+            modals.capacity.confirm.addEventListener('click', () => {
+                const v = parseInt(modals.capacity.input.value);
+                const min = parseInt(modals.capacity.input.min, 10) || 1;
+                if (v > 0 && v >= min) {
+                    state.capacity = v;
+                    updateUI();
+                    saveState();
+                    closeModal(modals.capacity);
+                    modals.capacity.input.value = '';
+                    modals.capacity.input.min = 1; // Reset min
+                } else {
+                    alert(`Introduce un número válido mayor o igual a ${min}.`);
+                }
+            });
+            modals.customValue.confirm.addEventListener('click', () => { const v = parseInt(modals.customValue.input.value); if(!isNaN(v)) { changeCount(v); closeModal(modals.customValue); modals.customValue.input.value = ''; } });
+            modals.confirmReset.confirm.addEventListener('click', () => { resetCounter(); closeModal(modals.confirmReset); });
+            modals.confirmDeleteAll.confirm.addEventListener('click', () => { deleteAllData(); closeModal(modals.confirmDeleteAll); });
+            modals.saveSnapshot.confirm.addEventListener('click', () => {
+                saveSnapshot(modals.saveSnapshot.titleInput.value, modals.saveSnapshot.noteInput.value);
+                modals.saveSnapshot.titleInput.value = '';
+                modals.saveSnapshot.noteInput.value = '';
+                closeModal(modals.saveSnapshot);
+            });
+            modals.dayNotes.close.addEventListener('click', () => closeModal(modals.dayNotes));
+
+            modals.dayNotes.list.addEventListener('click', e => {
+                const item = e.target.closest('.snapshot-item');
+                if (item && item.dataset.id) {
+                    showSnapshotDetails(parseInt(item.dataset.id, 10));
+                }
+            });
+            modals.snapshotDetail.close.addEventListener('click', () => closeModal(modals.snapshotDetail));
+
+            modals.exceedLimit.cancel.addEventListener('click', () => {
+                pendingChange.amount = 0;
+                closeModal(modals.exceedLimit);
+            });
+
+            modals.exceedLimit.confirm.addEventListener('click', () => {
+                const amount = pendingChange.amount;
+                if (amount === 0) return;
+
+                state.count += amount;
+                const shouldSetNewLimit = modals.exceedLimit.checkbox.checked;
+
+                pendingChange.amount = 0;
+                modals.exceedLimit.checkbox.checked = false;
+                closeModal(modals.exceedLimit);
+
+                if (shouldSetNewLimit) {
+                    modals.capacity.input.value = state.count;
+                    modals.capacity.input.min = state.count;
+                    openModal(modals.capacity);
+                } else {
+                    checkAndScaleCapacity(); // Auto-scale if user just confirms without wanting to set a manual limit
+                }
+
+                updateUI();
+                saveState();
+            });
+
+            Object.values(modals).forEach(modal => {
+                const closeAction = () => { if (modal === modals.confirmDeleteAll && countdownInterval) clearInterval(countdownInterval); closeModal(modal); };
+                if (modal.cancel) modal.cancel.addEventListener('click', closeAction);
+                modal.overlay.addEventListener('click', e => { if (e.target === modal.overlay) closeAction(); });
+            });
+            modals.shareWidget.copy.addEventListener('click', () => { modals.shareWidget.code.select(); document.execCommand('copy'); modals.shareWidget.copy.textContent = '¡Copiado!'; setTimeout(() => { modals.shareWidget.copy.textContent = 'Copiar'; }, 2000); });
+            snapshotListEl.addEventListener('click', e => { if (e.target.classList.contains('delete-snapshot')) deleteSnapshot(parseInt(e.target.dataset.id)); });
+            document.addEventListener('click', () => { toggleOptionsMenu(true); toggleThemeSelector(true); $('#year-selector-dropdown')?.style.display == 'block' ? $('#year-selector-dropdown').style.display = 'none' : null; });
+            options.dropdown.addEventListener('click', e => e.stopPropagation());
+            options.themeSelectorPanel.addEventListener('click', e => e.stopPropagation());
+            calendarContainer.addEventListener('click', e => e.stopPropagation());
+            window.addEventListener('resize', () => { drawGauge(gaugeCanvas, state.count, state.capacity, state.mode); drawGauge(widgetGaugeCanvas, state.count, state.capacity, state.mode); });
+            
+            chartControls.viewBar.addEventListener('click', () => { state.config.historyView = 'bar'; updateUI(); saveState(); });
+            chartControls.viewCalendar.addEventListener('click', () => { state.config.historyView = 'calendar'; updateUI(); saveState(); });
+            Object.values(chartControls).filter(btn => btn.dataset.timespan).forEach(btn => btn.addEventListener('click', e => {
+                state.config.barChartTimespan = e.target.dataset.timespan;
+                state.selectedDateForLineChart = null;
+                updateUI();
+                saveState();
+            }));
+        }
+        
+        function init() {
+            loadState();
+            if (!state.selectedDateForLineChart) {
+                state.selectedDateForLineChart = new Date().toISOString().split('T')[0];
+            }
+            setupThemeSelector();
+            addEventListeners();
+            setupWidgetView();
+            updateUI();
+            animateGauge();
+
+            // --- Autoría por Daniel Terroba Alcala ---
+            function addWatermark() {
+                if (document.getElementById('dta-watermark')) return;
+                const cr = atob('SGVjaG8gcG9yIERhbmllbCBUZXJyb2JhIEFsY2FsYQ=='); // Obfuscated
+                const el = document.createElement('div');
+                el.id = 'dta-watermark';
+                el.textContent = cr;
+                Object.assign(el.style, {
+                    position: 'fixed',
+                    bottom: '8px',
+                    left: '24px',
+                    fontSize: '10px',
+                    color: 'var(--text-muted-color)',
+                    opacity: '0.7',
+                    pointerEvents: 'none',
+                    zIndex: '9999'
+                });
+                document.body.appendChild(el);
+            }
+            addWatermark();
+            setInterval(addWatermark, 2500); // Re-add if removed
+        }
+
+        init();
+    });
+    </script>
+</body>
+</html>
+
