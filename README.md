@@ -6,7 +6,7 @@
 
 Una aplicación web robusta y auto-contenida en un solo archivo HTML para el conteo de personas, gestión de aforo y análisis de datos históricos. Diseñada sin frameworks, con un enfoque en la personalización, la accesibilidad y la persistencia de datos local.
 
-![https://i.imgur.com/8a6Q4sS.png](https://i.imgur.com/8a6Q4sS.png)
+
 
 ---
 
